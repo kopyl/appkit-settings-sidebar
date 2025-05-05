@@ -33,7 +33,6 @@ class ShortcutView: NSView {
     
     func setupView() {
         frame = NSRect(x: 0, y: 0, width: WindowConfig.width, height: WindowConfig.height)
-        wantsLayer = true
         
         let textLabel = NSTextField(labelWithString: "Shortcut")
         textLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -58,7 +57,6 @@ class AppearanceView: NSView {
     
     func setupView() {
         frame = NSRect(x: 0, y: 0, width: WindowConfig.width, height: WindowConfig.height)
-        wantsLayer = true
         
         let textLabel = NSTextField(labelWithString: "Appearance")
         textLabel.translatesAutoresizingMaskIntoConstraints = false
