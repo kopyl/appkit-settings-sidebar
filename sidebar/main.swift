@@ -198,12 +198,6 @@ class MainSplitViewController: NSSplitViewController, SidebarSelectionDelegate {
 
 var mainWindow: NSWindow?
 
-let titlebarAccessory = NSTitlebarAccessoryViewController()
-titlebarAccessory.layoutAttribute = .top
-
-let customTitlebarView = NSView()
-customTitlebarView.translatesAutoresizingMaskIntoConstraints = false
-
 func addPaddingToWindowButtons() {
     DispatchQueue.main.async {
         guard let window = mainWindow,
@@ -225,14 +219,8 @@ func createMainWindow() {
         backing: .buffered, defer: false
     )
     mainWindow?.center()
-    mainWindow?.titleVisibility = .hidden
-    
     mainWindow?.contentViewController = MainSplitViewController()
-    
     mainWindow?.titlebarAppearsTransparent = true
-    
-    mainWindow?.addTitlebarAccessoryViewController(titlebarAccessory)
-    mainWindow?.titlebarSeparatorStyle = .none
     
     addPaddingToWindowButtons()
     
