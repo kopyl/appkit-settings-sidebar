@@ -24,7 +24,6 @@ protocol SidebarSelectionDelegate: AnyObject {
 class ShortcutView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
-        
         setupView()
     }
     
