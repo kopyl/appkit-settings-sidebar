@@ -9,19 +9,12 @@ class WindowConfig {
 enum SidebarItem: String, CaseIterable {
     case shortcut = "Shortcut"
     case appearance = "Appearance"
-}
-
-func getIcon(for item: SidebarItem) -> NSImageView {
-    var imageName: String
-    switch item {
-    case .shortcut:
-        imageName = "shortcut-icon"
-    case .appearance:
-        imageName = "appearance-icon"
+    
+    var icon: NSImageView {
+        let imageName = "\(self.rawValue)-icon"
+        let image = NSImage(named: NSImage.Name(imageName)) ?? NSImage()
+        return NSImageView(image: image)
     }
-    let image = NSImage(named: NSImage.Name(imageName)) ?? NSImage()
-    let imageView = NSImageView(image: image)
-    return imageView
 }
 
 protocol SidebarSelectionDelegate: AnyObject {
@@ -31,6 +24,7 @@ protocol SidebarSelectionDelegate: AnyObject {
 class ShortcutView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
+        
         setupView()
     }
     
@@ -120,7 +114,7 @@ class SidebarViewController: NSViewController, NSTableViewDataSource, NSTableVie
         textLabel.isBordered = false
         textLabel.drawsBackground = false
         
-        let imageView = getIcon(for: items[row])
+        let imageView = items[row].icon
         
         let stackView = NSStackView(views: [imageView, textLabel])
         stackView.orientation = .horizontal
