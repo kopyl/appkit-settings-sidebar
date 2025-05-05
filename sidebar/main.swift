@@ -221,7 +221,7 @@ func addPaddingToWindowButtons() {
 func createMainWindow() {
     mainWindow = NSWindow(
         contentRect: NSRect(x: 0, y: 0, width: WindowConfig.width, height: WindowConfig.height),
-        styleMask: [.titled, .closable, .fullSizeContentView, .unifiedTitleAndToolbar],
+        styleMask: [.titled, .closable, .fullSizeContentView],
         backing: .buffered, defer: false
     )
     mainWindow?.center()
