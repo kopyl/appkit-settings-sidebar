@@ -7,15 +7,28 @@ class WindowConfig {
 }
 
 enum SidebarItem: String, CaseIterable {
-    case home = "Home"
-    case settings = "Settings"
+    case shortcut = "Shortcut"
+    case appearance = "Appearance"
+}
+
+func getIcon(for item: SidebarItem) -> NSImageView {
+    var imageName: String
+    switch item {
+    case .shortcut:
+        imageName = "shortcut-icon"
+    case .appearance:
+        imageName = "appearance-icon"
+    }
+    let image = NSImage(named: NSImage.Name(imageName)) ?? NSImage()
+    let imageView = NSImageView(image: image)
+    return imageView
 }
 
 protocol SidebarSelectionDelegate: AnyObject {
     func didSelectSidebarItem(_ item: SidebarItem)
 }
 
-class MainWindowView: NSView {
+class ShortcutView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         setupView()
@@ -40,7 +53,7 @@ class MainWindowView: NSView {
     }
 }
 
-class SettingsView: NSView {
+class AppearanceView: NSView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         setupView()
@@ -80,13 +93,19 @@ class SidebarViewController: NSViewController, NSTableViewDataSource, NSTableVie
         tableView.delegate = self
         tableView.dataSource = self
         
+        tableView.rowHeight = 28
+        
         tableView.translatesAutoresizingMaskIntoConstraints = false
         
         tableView.focusRingType = .none
+        
+        DispatchQueue.main.async {
+            self.tableView.selectRowIndexes([0], byExtendingSelection: false)
+        }
 
         view.addSubview(tableView)
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.topAnchor, constant: 50),
+            tableView.topAnchor.constraint(equalTo: view.topAnchor, constant: 43),
         ])
     }
 
@@ -96,12 +115,23 @@ class SidebarViewController: NSViewController, NSTableViewDataSource, NSTableVie
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         let item = items[row]
-        let cell = NSTextField(labelWithString: item.rawValue)
-        cell.isBordered = false
-        cell.drawsBackground = false
-        return cell
+        
+        let textLabel = NSTextField(labelWithString: item.rawValue)
+        textLabel.isBordered = false
+        textLabel.drawsBackground = false
+        
+        let imageView = getIcon(for: items[row])
+        
+        let stackView = NSStackView(views: [imageView, textLabel])
+        stackView.orientation = .horizontal
+        stackView.spacing = 5
+        
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.heightAnchor.constraint(equalToConstant: tableView.rowHeight).isActive = true
+        
+        return stackView
     }
-
+    
     func tableViewSelectionDidChange(_ notification: Notification) {
         let selectedIndex = tableView.selectedRow
         guard selectedIndex >= 0 else { return }
@@ -111,13 +141,13 @@ class SidebarViewController: NSViewController, NSTableViewDataSource, NSTableVie
 
 class DetailViewController: NSViewController {
     override func loadView() {
-        self.view = MainWindowView()
+        self.view = ShortcutView()
     }
 }
 
-class SettingsViewController: NSViewController {
+class AppearanceViewController: NSViewController {
     override func loadView() {
-        self.view = SettingsView()
+        self.view = AppearanceView()
     }
 }
 
@@ -141,13 +171,13 @@ class MainSplitViewController: NSSplitViewController, SidebarSelectionDelegate {
         sidebarItem.canCollapse = false
         addSplitViewItem(sidebarItem)
 
-        let initialDetailVC = viewController(for: .home)
+        let initialDetailVC = viewController(for: .shortcut)
         let detailItem = NSSplitViewItem(viewController: initialDetailVC)
         addSplitViewItem(detailItem)
         currentDetailVC = initialDetailVC
     }
 
-    func didSelectSidebarItem(_ item: SidebarItem) {        
+    func didSelectSidebarItem(_ item: SidebarItem) {
         let newVC = viewController(for: item)
 
         removeSplitViewItem(splitViewItems[1])
@@ -158,10 +188,10 @@ class MainSplitViewController: NSSplitViewController, SidebarSelectionDelegate {
 
     private func viewController(for item: SidebarItem) -> NSViewController {
         switch item {
-        case .home:
+        case .shortcut:
             return DetailViewController()
-        case .settings:
-            return SettingsViewController()
+        case .appearance:
+            return AppearanceViewController()
         }
     }
 }
