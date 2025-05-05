@@ -15,6 +15,15 @@ enum SidebarItem: String, CaseIterable {
         let image = NSImage(named: NSImage.Name(imageName)) ?? NSImage()
         return NSImageView(image: image)
     }
+    
+    var viewController: NSViewController {
+        switch self {
+        case .shortcut:
+            return ShortcutViewController()
+        case .appearance:
+            return AppearanceViewController()
+        }
+    }
 }
 
 protocol SidebarSelectionDelegate: AnyObject {
@@ -22,6 +31,7 @@ protocol SidebarSelectionDelegate: AnyObject {
 }
 
 class ShortcutView: NSView {
+    
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         setupView()
@@ -46,6 +56,7 @@ class ShortcutView: NSView {
 }
 
 class AppearanceView: NSView {
+    
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         setupView()
@@ -80,14 +91,10 @@ class SidebarViewController: NSViewController, NSTableViewDataSource, NSTableVie
 
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("Column"))
         tableView.addTableColumn(column)
-        tableView.headerView = nil
         tableView.delegate = self
         tableView.dataSource = self
-        
         tableView.rowHeight = 28
-        
         tableView.translatesAutoresizingMaskIntoConstraints = false
-        
         tableView.focusRingType = .none
         
         DispatchQueue.main.async {
@@ -105,19 +112,11 @@ class SidebarViewController: NSViewController, NSTableViewDataSource, NSTableVie
     }
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        let item = items[row]
-        
-        let textLabel = NSTextField(labelWithString: item.rawValue)
-        textLabel.isBordered = false
-        textLabel.drawsBackground = false
-        
+        let textLabel = NSTextField(labelWithString: items[row].rawValue)
         let imageView = items[row].icon
         
         let stackView = NSStackView(views: [imageView, textLabel])
-        stackView.orientation = .horizontal
         stackView.spacing = 5
-        
-        stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.heightAnchor.constraint(equalToConstant: tableView.rowHeight).isActive = true
         
         return stackView
@@ -130,7 +129,7 @@ class SidebarViewController: NSViewController, NSTableViewDataSource, NSTableVie
     }
 }
 
-class DetailViewController: NSViewController {
+class ShortcutViewController: NSViewController {
     override func loadView() {
         self.view = ShortcutView()
     }
@@ -142,8 +141,7 @@ class AppearanceViewController: NSViewController {
     }
 }
 
-class MainSplitViewController: NSSplitViewController, SidebarSelectionDelegate {
-    private var currentDetailVC: NSViewController?
+class SplitViewController: NSSplitViewController, SidebarSelectionDelegate {
     
     override func loadView() {
         view = NSView(frame: NSRect(x: 0, y: 0, width: WindowConfig.width, height: WindowConfig.height))
@@ -161,35 +159,21 @@ class MainSplitViewController: NSSplitViewController, SidebarSelectionDelegate {
         sidebarItem.maximumThickness = WindowConfig.sidebarFixedWidth
         sidebarItem.canCollapse = false
         addSplitViewItem(sidebarItem)
-
-        let initialDetailVC = viewController(for: .shortcut)
-        let detailItem = NSSplitViewItem(viewController: initialDetailVC)
+        
+        let detailItem = NSSplitViewItem(viewController: SidebarItem.shortcut.viewController)
         addSplitViewItem(detailItem)
-        currentDetailVC = initialDetailVC
     }
 
     func didSelectSidebarItem(_ item: SidebarItem) {
-        let newVC = viewController(for: item)
-
         removeSplitViewItem(splitViewItems[1])
-        let newDetailItem = NSSplitViewItem(viewController: newVC)
+        let newDetailItem = NSSplitViewItem(viewController: item.viewController)
         addSplitViewItem(newDetailItem)
-        currentDetailVC = newVC
-    }
-
-    private func viewController(for item: SidebarItem) -> NSViewController {
-        switch item {
-        case .shortcut:
-            return DetailViewController()
-        case .appearance:
-            return AppearanceViewController()
-        }
     }
 }
 
 var mainWindow: NSWindow?
 
-func addPaddingToWindowButtons() {
+func addPaddingToWindowButtons(leading: CGFloat, top: CGFloat) {
     DispatchQueue.main.async {
         guard let window = mainWindow,
               let buttonContainer = window.standardWindowButton(.closeButton)?.superview else {
@@ -197,8 +181,8 @@ func addPaddingToWindowButtons() {
         }
         
         var frame = buttonContainer.frame
-        frame.origin.x += 12
-        frame.origin.y -= 12
+        frame.origin.x += leading
+        frame.origin.y -= top
         buttonContainer.frame = frame
     }
 }
@@ -210,10 +194,10 @@ func createMainWindow() {
         backing: .buffered, defer: false
     )
     mainWindow?.center()
-    mainWindow?.contentViewController = MainSplitViewController()
+    mainWindow?.contentViewController = SplitViewController()
     mainWindow?.titlebarAppearsTransparent = true
     
-    addPaddingToWindowButtons()
+    addPaddingToWindowButtons(leading: 12, top: 12)
     
     let _ = NSWindowController(window: mainWindow)
 }
@@ -233,5 +217,5 @@ app.delegate = delegate
 app.run()
 
 #Preview {
-    MainSplitViewController()
+    SplitViewController()
 }
