@@ -2,7 +2,7 @@ import Cocoa
 
 class WindowConfig {
     static let width: CGFloat = 659
-    static let height: CGFloat = 800
+    static let height: CGFloat = 400
     static let sidebarFixedWidth: CGFloat = 215
     static let sideBarTopPadding: CGFloat = 43
 }
@@ -199,6 +199,15 @@ func addPaddingToWindowButtons(leading: CGFloat, top: CGFloat) {
         mainWindow?.standardWindowButton(.miniaturizeButton)?.frame.origin.x += leading
         mainWindow?.standardWindowButton(.closeButton)?.frame.origin.x += leading
         mainWindow?.standardWindowButton(.zoomButton)?.frame.origin.x += leading
+        
+        guard let window = mainWindow,
+              let buttonContainer = window.standardWindowButton(.closeButton)?.superview else {
+            return
+        }
+        
+        for subview in buttonContainer.subviews where subview is NSTextField {
+            subview.frame.origin.y -= top
+        }
     }
 }
 
@@ -211,6 +220,8 @@ func createMainWindow() {
     mainWindow?.center()
     mainWindow?.contentViewController = SplitViewController()
     mainWindow?.titlebarAppearsTransparent = true
+    
+    mainWindow?.title = "Settings"
     
     addPaddingToWindowButtons(leading: 12, top: 12)
     
