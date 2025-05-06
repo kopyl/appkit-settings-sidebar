@@ -4,6 +4,7 @@ class WindowConfig {
     static let width: CGFloat = 659
     static let height: CGFloat = 800
     static let sidebarFixedWidth: CGFloat = 215
+    static let sideBarTopPadding: CGFloat = 43
 }
 
 enum SidebarItem: String, CaseIterable {
@@ -80,6 +81,12 @@ class AppearanceView: NSView {
     }
 }
 
+class DraggableView: NSView {
+    override public func mouseDown(with event: NSEvent) {
+        window?.performDrag(with: event)
+    }
+}
+
 class SidebarViewController: NSViewController, NSTableViewDataSource, NSTableViewDelegate {
     weak var delegate: SidebarSelectionDelegate?
     
@@ -100,10 +107,20 @@ class SidebarViewController: NSViewController, NSTableViewDataSource, NSTableVie
         DispatchQueue.main.async {
             self.tableView.selectRowIndexes([0], byExtendingSelection: false)
         }
-
+        
         view.addSubview(tableView)
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: view.topAnchor, constant: 43),
+            tableView.topAnchor.constraint(equalTo: view.topAnchor, constant: WindowConfig.sideBarTopPadding),
+        ])
+        
+        let draggableView = DraggableView()
+        draggableView.translatesAutoresizingMaskIntoConstraints = false
+        draggableView.wantsLayer = true
+        view.addSubview(draggableView)
+        NSLayoutConstraint.activate([
+            draggableView.heightAnchor.constraint(equalToConstant: WindowConfig.sideBarTopPadding + 10),
+            draggableView.widthAnchor.constraint(equalToConstant: WindowConfig.sidebarFixedWidth),
+            draggableView.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
         ])
     }
 
@@ -175,15 +192,13 @@ var mainWindow: NSWindow?
 
 func addPaddingToWindowButtons(leading: CGFloat, top: CGFloat) {
     DispatchQueue.main.async {
-        guard let window = mainWindow,
-              let buttonContainer = window.standardWindowButton(.closeButton)?.superview else {
-            return
-        }
+        mainWindow?.standardWindowButton(.miniaturizeButton)?.frame.origin.y -= top
+        mainWindow?.standardWindowButton(.closeButton)?.frame.origin.y -= top
+        mainWindow?.standardWindowButton(.zoomButton)?.frame.origin.y -= top
         
-        var frame = buttonContainer.frame
-        frame.origin.x += leading
-        frame.origin.y -= top
-        buttonContainer.frame = frame
+        mainWindow?.standardWindowButton(.miniaturizeButton)?.frame.origin.x += leading
+        mainWindow?.standardWindowButton(.closeButton)?.frame.origin.x += leading
+        mainWindow?.standardWindowButton(.zoomButton)?.frame.origin.x += leading
     }
 }
 
@@ -198,6 +213,9 @@ func createMainWindow() {
     mainWindow?.titlebarAppearsTransparent = true
     
     addPaddingToWindowButtons(leading: 12, top: 12)
+    
+    /// hack to increase draggable titlebar area
+    mainWindow?.addTitlebarAccessoryViewController(NSTitlebarAccessoryViewController())
     
     let _ = NSWindowController(window: mainWindow)
 }
