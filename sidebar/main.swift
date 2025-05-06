@@ -200,12 +200,9 @@ func addPaddingToWindowButtons(leading: CGFloat, top: CGFloat) {
         mainWindow?.standardWindowButton(.closeButton)?.frame.origin.x += leading
         mainWindow?.standardWindowButton(.zoomButton)?.frame.origin.x += leading
         
-        guard let window = mainWindow,
-              let buttonContainer = window.standardWindowButton(.closeButton)?.superview else {
-            return
-        }
+        let buttonContainer = mainWindow?.standardWindowButton(.closeButton)?.superview
         
-        for subview in buttonContainer.subviews where subview is NSTextField {
+        for subview in buttonContainer?.subviews ?? [] where subview is NSTextField {
             subview.frame.origin.y -= top
         }
     }
