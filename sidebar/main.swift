@@ -1,6 +1,8 @@
 import Cocoa
+import SwiftUI
 
 var mainWindow: NSWindow?
+var mainWindowController: SettingsWindowController?
 
 class WindowConfig {
     static let width: CGFloat = 659
@@ -31,56 +33,6 @@ enum SidebarItem: String, CaseIterable {
 
 protocol SidebarSelectionDelegate: AnyObject {
     func didSelectSidebarItem(_ item: SidebarItem)
-}
-
-class ShortcutView: NSView {
-    
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        setupView()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    func setupView() {
-        frame = NSRect(x: 0, y: 0, width: WindowConfig.width, height: WindowConfig.height)
-        
-        let textLabel = NSTextField(labelWithString: "Shortcut")
-        textLabel.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(textLabel)
-        
-        NSLayoutConstraint.activate([
-            textLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
-            textLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-        ])
-    }
-}
-
-class AppearanceView: NSView {
-    
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-        setupView()
-    }
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    func setupView() {
-        frame = NSRect(x: 0, y: 0, width: WindowConfig.width, height: WindowConfig.height)
-        
-        let textLabel = NSTextField(labelWithString: "Appearance")
-        textLabel.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(textLabel)
-        
-        NSLayoutConstraint.activate([
-            textLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
-            textLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-        ])
-    }
 }
 
 class DraggableView: NSView {
@@ -148,6 +100,56 @@ class SidebarViewController: NSViewController, NSTableViewDataSource, NSTableVie
     }
 }
 
+class ShortcutView: NSView {
+    
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setupView()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    func setupView() {
+        frame = NSRect(x: 0, y: 0, width: WindowConfig.width, height: WindowConfig.height)
+        
+        let textLabel = NSTextField(labelWithString: "Shortcut")
+        textLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(textLabel)
+        
+        NSLayoutConstraint.activate([
+            textLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            textLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+        ])
+    }
+}
+
+class AppearanceView: NSView {
+    
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setupView()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    func setupView() {
+        frame = NSRect(x: 0, y: 0, width: WindowConfig.width, height: WindowConfig.height)
+        
+        let textLabel = NSTextField(labelWithString: "Appearance")
+        textLabel.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(textLabel)
+        
+        NSLayoutConstraint.activate([
+            textLabel.centerXAnchor.constraint(equalTo: centerXAnchor),
+            textLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+        ])
+    }
+}
+
 class ShortcutViewController: NSViewController {
     override func loadView() {
         self.view = ShortcutView()
@@ -191,20 +193,47 @@ class SplitViewController: NSSplitViewController, SidebarSelectionDelegate {
 }
 
 func addPaddingToWindowButtons(leading: CGFloat, top: CGFloat) {
-    DispatchQueue.main.async {
-        mainWindow?.standardWindowButton(.miniaturizeButton)?.frame.origin.y -= top
-        mainWindow?.standardWindowButton(.closeButton)?.frame.origin.y -= top
-        mainWindow?.standardWindowButton(.zoomButton)?.frame.origin.y -= top
+    mainWindow?.standardWindowButton(.miniaturizeButton)?.frame.origin.y -= top
+    mainWindow?.standardWindowButton(.closeButton)?.frame.origin.y -= top
+    mainWindow?.standardWindowButton(.zoomButton)?.frame.origin.y -= top
+    
+    mainWindow?.standardWindowButton(.miniaturizeButton)?.frame.origin.x += leading
+    mainWindow?.standardWindowButton(.closeButton)?.frame.origin.x += leading
+    mainWindow?.standardWindowButton(.zoomButton)?.frame.origin.x += leading
+    
+    let buttonContainer = mainWindow?.standardWindowButton(.closeButton)?.superview
+    
+    for subview in buttonContainer?.subviews ?? [] where subview is NSTextField {
+        subview.frame.origin.y -= top
+    }
+}
+
+class SettingsWindowController: NSWindowController {
+    override init(window: NSWindow?) {
+        super.init(window: window)
         
-        mainWindow?.standardWindowButton(.miniaturizeButton)?.frame.origin.x += leading
-        mainWindow?.standardWindowButton(.closeButton)?.frame.origin.x += leading
-        mainWindow?.standardWindowButton(.zoomButton)?.frame.origin.x += leading
-        
-        let buttonContainer = mainWindow?.standardWindowButton(.closeButton)?.superview
-        
-        for subview in buttonContainer?.subviews ?? [] where subview is NSTextField {
-            subview.frame.origin.y -= top
-        }
+        NotificationCenter.default.addObserver(
+                self,
+           selector: #selector(windowDidResize(_:)),
+           name: NSWindow.didResizeNotification,
+           object: mainWindow
+        )
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    @objc func windowDidResize(_ notification: Notification) {
+        addPaddingToWindowButtons(leading: 12, top: 12)
+    }
+    
+    deinit {
+            NotificationCenter.default.removeObserver(
+                self,
+            name: NSWindow.didResizeNotification,
+            object: self.window
+        )
     }
 }
 
@@ -216,16 +245,12 @@ func createMainWindow() {
     )
     mainWindow?.center()
     mainWindow?.contentViewController = SplitViewController()
+    
     mainWindow?.titlebarAppearsTransparent = true
+    mainWindow?.titleVisibility = .hidden
     
-    mainWindow?.title = "Settings"
-    
-    addPaddingToWindowButtons(leading: 12, top: 12)
-    
-    /// hack to increase draggable titlebar area
-    mainWindow?.addTitlebarAccessoryViewController(NSTitlebarAccessoryViewController())
-    
-    let _ = NSWindowController(window: mainWindow)
+    mainWindowController = SettingsWindowController(window: mainWindow)
+    mainWindow?.makeKeyAndOrderFront(nil)
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
