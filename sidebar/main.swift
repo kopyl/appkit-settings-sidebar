@@ -1,5 +1,7 @@
 import Cocoa
 
+var mainWindow: NSWindow?
+
 class WindowConfig {
     static let width: CGFloat = 659
     static let height: CGFloat = 400
@@ -187,8 +189,6 @@ class SplitViewController: NSSplitViewController, SidebarSelectionDelegate {
         addSplitViewItem(newDetailItem)
     }
 }
-
-var mainWindow: NSWindow?
 
 func addPaddingToWindowButtons(leading: CGFloat, top: CGFloat) {
     DispatchQueue.main.async {
